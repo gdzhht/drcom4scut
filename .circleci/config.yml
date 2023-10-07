@@ -1,1 +1,22 @@
+version: 2.1
+orbs:
+  rust: circleci/rust@1.6.0
 
+jobs:
+  build:
+    docker:
+      # replace with your preferred image
+      - image: cimg/base:stable
+    resource_class: arm.medium
+    steps:
+      - rust/install:
+          version: nightly-2023-05-31 
+      - rust/build:
+          release: true 
+          with_cache: true 
+
+
+workflows:
+  build:
+    jobs:
+      - build
