@@ -1,22 +1,39 @@
 version: 2.1
 orbs:
-  rust: circleci/rust@1.6.0
+  github-cli: circleci/github-cli@2.2.0
 
 jobs:
-  build:
+  build-arm64:
     docker:
       # replace with your preferred image
-      - image: cimg/base:stable
+      - image: debian:stable
     resource_class: arm.medium
     steps:
-      - rust/install:
-          version: nightly-2023-05-31 
-      - rust/build:
-          release: true 
-          with_cache: true 
-
+      - run: apt-get update ; apt-get install -y wget curl apt-transport-https ca-certificates git gcc g++ ; apt-get clean
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust.sh ; bash rust.sh -q -y --default-toolchain nightly-2023-05-31 ; source "$HOME/.cargo/env"
+      - checkout
+      - run: cargo build --release
+  build-amd64:
+    docker:
+      # replace with your preferred image
+      - image: debian:stable
+    resource_class: small
+    steps:
+      - run: apt-get update ; apt-get install -y wget curl apt-transport-https ca-certificates git gcc g++ ; apt-get clean
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust.sh ; bash rust.sh -q -y --default-toolchain nightly-2023-05-31 ; source "$HOME/.cargo/env"
+      - checkout
+      - run: cargo build --release
 
 workflows:
-  build:
+  build-arm:
     jobs:
-      - build
+      - build-arm64
+      - github-cli/release:
+          tag: 'arm64' 
+          files: ./target/release/drcom4scut 
+  build-amd64:
+    jobs:
+      - build-amd64
+      - github-cli/release:
+          tag: 'amd64' 
+          files: ./target/release/drcom4scut 
